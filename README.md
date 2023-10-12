@@ -37,6 +37,8 @@ specified during execution
 
 ## Execution
 
+### Demonstration Video is included on Demo.zip
+
 This project can be executed
 
 * by directly calling the main.py package 

@@ -56,7 +56,7 @@ class EventHandler(pyinotify.ProcessEvent):
             payload.update({"timestamp": datetime.now().isoformat()})
             topic = event.pathname
             x = topic.split("/docker/host_root", 1)
-            if x[0] == "":
+            if x[0] == "":          # Check if the command is invoked inside docker
                 topic = x[1]
             result = mqtt_client.publish(topic=topic, payload=str(payload))
             if result[0] == 0:
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     args = get_arguments(root_dir)
     actual_path = args.path
     a = args.path.split("/docker/host_root", 1)
-    if a[0] == "":
+    if a[0] == "":          # Check if the command is invoked inside docker
         actual_path = a[1]
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -108,15 +108,15 @@ if __name__ == "__main__":
         wm = pyinotify.WatchManager()
         handler = EventHandler()
         notifier = pyinotify.Notifier(wm, handler)
-        wdd = wm.add_watch(args.path, pyinotify.ALL_EVENTS)
+        wdd = wm.add_watch(args.path, pyinotify.ALL_EVENTS)        #Watch Manager
         if wdd[args.path] == -1:
             raise NameError("Unable to add watch on " + actual_path)
         else:
             print("New Watch Added onto", actual_path)
         for method in EventHandler._methods:
             EventHandler.process_generator(EventHandler, method, client)
-        client.loop_start()
-        notifier.loop()
+        client.loop_start()        #Mqtt Loop to publish messages
+        notifier.loop()            #Watch Manager Loop to check for new events
     except Exception as e:
         client.loop_stop()
         client.disconnect()
