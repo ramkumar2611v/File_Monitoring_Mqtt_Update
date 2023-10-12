@@ -21,6 +21,8 @@ And the following pip packages as well
 
 * argparse
 
+Dockerfile is also given with the required dependencies pre-installed, to run this project
+
 
 ## Objective
 
