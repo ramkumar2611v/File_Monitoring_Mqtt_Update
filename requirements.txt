@@ -1,0 +1,5 @@
+pyinotify
+paho-mqtt
+datetime
+argparse
+
