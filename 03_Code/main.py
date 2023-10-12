@@ -89,6 +89,7 @@ def get_arguments(root_dir):
         "--port",
         help="MQTT broker port",
         required=True,
+        type=int,
     )
     return parser.parse_args()
 
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     client.on_connect = on_connect
     try:
         print("Making MQTT Connection")
-        client.connect(args.address, int(args.port), 60)
+        client.connect(args.address, args.port, 60)
         wm = pyinotify.WatchManager()
         handler = EventHandler()
         notifier = pyinotify.Notifier(wm, handler)
