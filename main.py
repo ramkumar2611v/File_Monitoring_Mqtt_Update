@@ -9,11 +9,17 @@ e.g.  python3 main.py --path=/home/rkumarv/test --address=mqtt.eclipseprojects.i
 """
 import argparse
 import os
-import time
 from datetime import datetime
 
 import paho.mqtt.client as mqtt
 import pyinotify
+
+
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Mqtt Broker Connected Successfully onto " + args.address)
+    else:
+        print("Failed to connect, return code " + rc)
 
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -39,7 +45,7 @@ class EventHandler(pyinotify.ProcessEvent):
         "default",
     ]
 
-    def process_generator(cls, method, mqtt_client, topic):
+    def process_generator(cls, method, mqtt_client):
         def _method_name(self, event):
             """
             Separate process handlers are created for each event specified on _methods
@@ -48,10 +54,16 @@ class EventHandler(pyinotify.ProcessEvent):
             payload.update({"event": event.maskname})
             payload.update({"is_directory": event.dir})
             payload.update({"timestamp": datetime.now().isoformat()})
-            mqtt_client.publish(topic=topic, payload=str(payload))
-            print("published - " + str(payload) + " onto Topic " + topic)
+            topic = event.pathname
+            x = topic.split("/docker/host_root", 1)
+            if x[0] == "":
+                topic = x[1]
+            result = mqtt_client.publish(topic=topic, payload=str(payload))
+            if result[0] == 0:
+                print("published - " + str(payload) + " onto Topic " + topic)
+            else:
+                print("Failed to send message to topic " + topic)
             if event.maskname == "IN_DELETE_SELF":
-                time.sleep(1)
                 raise NameError(topic + " does not exist anymore...!!!")
 
         _method_name.__name__ = "process_{}".format(method)
@@ -64,15 +76,19 @@ def get_arguments(root_dir):
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--path", help="path of directory or file to monitor", default=None
+        "--path",
+        help="path of directory or file to monitor",
+        required=True,
     )
     parser.add_argument(
         "--address",
         help="MQTT broker address",
+        required=True,
     )
     parser.add_argument(
         "--port",
         help="MQTT broker port",
+        required=True,
     )
     return parser.parse_args()
 
@@ -80,16 +96,16 @@ def get_arguments(root_dir):
 if __name__ == "__main__":
     root_dir = os.getcwd()
     args = get_arguments(root_dir)
-    client = mqtt.Client()
     actual_path = args.path
     a = args.path.split("/docker/host_root", 1)
     if a[0] == "":
         actual_path = a[1]
+    client = mqtt.Client()
+    client.on_connect = on_connect
     try:
         print("Making MQTT Connection")
         client.connect(args.address, int(args.port), 60)
-        print("Mqtt Broker Connected Successfully onto", args.address)
-        wm = pyinotify.WatchManager()  # Watch Manager
+        wm = pyinotify.WatchManager()
         handler = EventHandler()
         notifier = pyinotify.Notifier(wm, handler)
         wdd = wm.add_watch(args.path, pyinotify.ALL_EVENTS)
@@ -98,8 +114,10 @@ if __name__ == "__main__":
         else:
             print("New Watch Added onto", actual_path)
         for method in EventHandler._methods:
-            EventHandler.process_generator(EventHandler, method, client, actual_path)
+            EventHandler.process_generator(EventHandler, method, client)
+        client.loop_start()
         notifier.loop()
     except Exception as e:
+        client.loop_stop()
         client.disconnect()
         print(e)

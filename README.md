@@ -49,7 +49,7 @@ This will executed main.py file directly onto machine
 
 * by calling the build_and_run.sh shellscript
 
-e.g.bash build_and_run.sh --path=/PATH/TO/BE/MONITORED --address=mqttbrokeraddress --port=mqttbrokerport
+e.g.bash build_and_run.sh /PATH/TO/BE/MONITORED mqttbrokeraddress mqttbrokerport
 
 bash build_and_run.sh /home/rkumarv/test mqtt.eclipseprojects.io 1883
 
