@@ -57,6 +57,8 @@ bash build_and_run.sh /home/rkumarv/test mqtt.eclipseprojects.io 1883
 
 This will create a separate docker image and main.py will be executed within the container
 
+### Note : MQTT over unencrypted TCP is utilized in this module
+
 ## Contact
 
 * Email: ramkumar2611v@gmail.com
